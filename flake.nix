@@ -27,7 +27,7 @@
     in rec {
       devShell = let
       in pkgs.devshell.mkShell {
-        devshell.packages = with pkgs; [ pyenv ];
+        devshell.packages = with pkgs; [ pyenv lib-pod5 ];
         env = [
           { name = "MKL_NUM_THREADS"; value = 1; }
           { name = "OMP_NUM_THREADS"; value = 1; }
@@ -37,6 +37,29 @@
     }; #eachSystem
 
     overlay = final: prev: rec {
+      lib-pod5 = final.stdenv.mkDerivation rec {
+        name = "lib_pod5";
+        version = "0.2.3";
+        src = final.fetchFromGitHub {
+          owner = "nanoporetech";
+          repo = "pod5-file-format";
+          rev = "refs/tags/${version}";
+          hash = "sha256-4LX6gms70tqe51T8/UjS+yHV63j2i0/b59i55t2RbGM=";
+          fetchSubmodules = true;
+        };
+        nativeBuildInputs = with final; [ cmake arrow-cpp boost flatbuffers zstd conan pkgconfig (final.python310.withPackages (p: [p.setuptools_scm])) ];
+        configurePhase = ''
+          ls -alh
+          #python -m setuptools_scm
+          #bang
+          python -m pod5_make_version
+          mkdir -p build
+          cd build
+          cmake -DBUILD_PYTHON_WHEEL=OFF -DCMAKE_BUILD_TYPE=Release ..
+          make -j
+          bang
+        '';
+      };
       python310 = prev.python310.override {
         packageOverrides = self: super: {
           # BUG Uses a wheel; this could be problematic, in particular with regards to lib_pod5
@@ -49,7 +72,15 @@
               sha256 = "sha256-PCzm4y3V3Jv1YV2vpyxTL8rXpvPolz8OHiUFcbgRa9g=";
             };
             format = "wheel";
-            propagatedBuildInputs = with super; [ numpy setuptools final.gcc-unwrapped.lib ];
+            #src = final.fetchFromGitHub {
+            #  owner = "nanoporetech";
+            #  repo = "pod5-file-format";
+            #  rev = "refs/tags/${version}";
+            #  hash = "sha256-4LX6gms70tqe51T8/UjS+yHV63j2i0/b59i55t2RbGM=";
+            #};
+            #sourceRoot = "${src}/python/lib_pod5";
+            #doCheck = false;
+            propagatedBuildInputs = with super; [ numpy setuptools final.gcc-unwrapped.lib setuptools wheel pybind11 ];
           }; #lib-pod5
           pod5 = super.buildPythonPackage rec {
             pname = "pod5";
