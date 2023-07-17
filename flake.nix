@@ -27,46 +27,50 @@
     in rec {
       devShell = let
       in pkgs.devshell.mkShell {
-        devshell.packages = with pkgs; [ pyenv ]; # pyenv lib-pod5
+        devshell.packages = with pkgs; [ pyenv ];
         env = [
           { name = "MKL_NUM_THREADS"; value = 1; }
           { name = "OMP_NUM_THREADS"; value = 1; }
           { name = "HDF5_PLUGIN_PATH"; value = "${pkgs.hdf5}/lib"; }
         ];
-        #imports = [ (pkgs.devshell.importTOML ./devshell.toml) ];
       };
-      packages = { inherit (pkgs) lib-pod5; };
+      # TODO required for "nix develop .#lib-pod5"
+      packages = {}; # { inherit (pkgs) lib-pod5; };
     }; #eachSystem
 
     overlay = final: prev: rec {
-      lib-pod5 = final.stdenv.mkDerivation rec {
-        name = "lib_pod5";
-        version = "0.2.3";
-        src = final.fetchFromGitHub {
-          owner = "nanoporetech";
-          repo = "pod5-file-format";
-          rev = "refs/tags/${version}";
-          hash = "sha256-4LX6gms70tqe51T8/UjS+yHV63j2i0/b59i55t2RbGM=";
-          fetchSubmodules = true;
-        };
-        nativeBuildInputs = with final; [ cmake arrow-cpp boost flatbuffers zstd conan pkgconfig (final.python310.withPackages (p: [p.setuptools_scm p.pybind11])) gcc10 ];
-        configurePhase = ''
-          ls -alh
-          python --version
-          python -m setuptools_scm
-          #bang
-          #python -m pod5_make_version
-          #mkdir -p build
-          #cd build
-          #cmake -DBUILD_PYTHON_WHEEL=OFF -DCMAKE_BUILD_TYPE=Release ..
-          #make -j
-          bang
-        '';
-      };
+
+      # BUG: trying to build lib-pod5 from source is complicated at best. Needs an older version of
+      # conan, and other depends. Will only try if *really* necessary.
+
+      #lib-pod5 = final.stdenv.mkDerivation rec {
+      #  name = "lib_pod5";
+      #  version = "0.2.3";
+      #  src = final.fetchFromGitHub {
+      #    owner = "nanoporetech";
+      #    repo = "pod5-file-format";
+      #    rev = "refs/tags/${version}";
+      #    hash = "sha256-4LX6gms70tqe51T8/UjS+yHV63j2i0/b59i55t2RbGM=";
+      #    fetchSubmodules = true;
+      #  };
+      #  nativeBuildInputs = with final; [ cmake arrow-cpp boost flatbuffers zstd conan pkgconfig (final.python310.withPackages (p: [p.setuptools_scm p.pybind11])) gcc10 ];
+      #  configurePhase = ''
+      #    ls -alh
+      #    python --version
+      #    python -m setuptools_scm
+      #    #bang
+      #    #python -m pod5_make_version
+      #    #mkdir -p build
+      #    #cd build
+      #    #cmake -DBUILD_PYTHON_WHEEL=OFF -DCMAKE_BUILD_TYPE=Release ..
+      #    #make -j
+      #    bang
+      #  '';
+      #};
+
       python310 = prev.python310.override {
         packageOverrides = self: super: {
-          # BUG Uses a wheel; this could be problematic, in particular with regards to lib_pod5
-          # trying to access libstdc++
+
           lib-pod5 = super.buildPythonPackage rec {
             pname = "lib_pod5";
             version = "0.2.4";
@@ -79,8 +83,9 @@
               sha256 = "sha256-FShiq8FcfDznMJJ3NfEMtGgw/bNTNEEG5WQdFCODirM=";
             };
             format = "wheel";
-            propagatedBuildInputs = with super; [ numpy stdenv.cc.cc.lib ]; # setuptools final.gcc-unwrapped.lib setuptools wheel pybind11 ];
+            propagatedBuildInputs = with super; [ numpy stdenv.cc.cc.lib ];
           }; #lib-pod5
+
           pod5 = super.buildPythonPackage rec {
             pname = "pod5";
             version = "0.2.4";
@@ -95,6 +100,7 @@
                 --replace "polars~=0.17.12" "polars ~= 0.17.11"
             '';
           }; #pod5
+
           vbz-h5py-plugin = super.buildPythonPackage rec {
             pname = "vbz_h5py_plugin";
             version = "1.0.1";
@@ -104,6 +110,7 @@
             };
             propagatedBuildInputs = with super; [ h5py ];
           }; #vbz-h5py-plugin
+
           pyslow5 = super.buildPythonPackage rec {
             pname = "pyslow5";
             version = "1.0.0";
@@ -113,6 +120,7 @@
             };
             propagatedBuildInputs = with super; [ numpy cython prev.zlib ];
           }; #pyslow5
+
           read5 = self.buildPythonPackage rec {
             pname = "read5";
             version = "main";
@@ -129,6 +137,7 @@
               ${self.pytest}/bin/pytest
             '';
           }; #read5
+
         }; #packageOverridesr
       };
     };
