@@ -119,15 +119,11 @@
             src = final.fetchFromGitHub {
               owner = "JannesSP";
               repo = pname;
-              rev = "9b414acd3aba3d31e363f71f9303f69548d9e537";
-              hash = "sha256-YpSfdxG4Akg6Nm0uhLja4Hbb/LQuBENp54rRel7PYhM=";
+              rev = "08a336080c52104f9fed2aa6affd83b70e7ed2f4";
+              hash = "sha256-WC/Axptjl99mv9+muCZHglM97ndc9bPV+Jm3JWTacBw=";
             };
             propagatedBuildInputs = with self; [ h5py pod5 pyslow5 vbz-h5py-plugin ];
             doCheck = true;
-            prePatch = ''
-              substituteInPlace setup.py \
-                --replace "'python>=3.8,<3.11'," ""
-            '';
             checkPhase = ''
               export HDF5_PLUGIN_PATH="${final.pkgs.hdf5}/lib:${self.vbz-h5py-plugin}/lib/python3.10/site-packages/vbz_h5py_plugin/lib"
               ${self.pytest}/bin/pytest
