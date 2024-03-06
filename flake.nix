@@ -33,7 +33,7 @@
         env = [
           { name = "MKL_NUM_THREADS"; value = 1; }
           { name = "OMP_NUM_THREADS"; value = 1; }
-          { name = "HDF5_PLUGIN_PATH"; value = "${pkgs.hdf5}/lib"; }
+          { name = "HDF5_PLUGIN_PATH"; value = "${pkgs.hdf5}/lib:${pkgs.vbz-hdf-plugin}/lib"; }
         ];
       };
       # TODO required for "nix develop .#lib-pod5"
@@ -42,7 +42,23 @@
 
     overlay = final: prev: rec {
 
-      # python310 = prev.python310.override { packageOverrides = final.pythonOverlay; };
+      vbz-hdf-plugin = with final; stdenv.mkDerivation rec {
+        pname = "vbz_compression";
+        version = "1.0.2";
+        src = pkgs.fetchurl {
+          url = "https://github.com/nanoporetech/vbz_compression/releases/download/1.0.2/ont-vbz-hdf-plugin_1.0.2-1.bionic_amd64.deb";
+          sha256 = "sha256-Ipy9fOIJ+keve8t+4XMa/vd0YPmTzGoAddhollv1xZQ=";
+        };
+        unpackPhase = ''
+          ${pkgs.dpkg}/bin/dpkg -x ${src} .
+        '';
+        installPhase = ''
+          mkdir -p $out/lib
+          mv usr/local/hdf5/lib/plugin/libvbz_hdf_plugin.so $out/lib
+        '';
+        buildInputs = with pkgs; [ zstd stdenv.cc.cc.lib ];
+        nativeBuildInputs = with pkgs; [ autoPatchelfHook ];
+      };
 
       # Overlay for python packages.
       # TODO This should be specialized to different python versions where necessary / possible.
