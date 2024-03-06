@@ -5,9 +5,10 @@
     nixpkgs.url = "github:NixOS/nixpkgs/23.05";
     flake-utils.url = "github:numtide/flake-utils";
     devshell.url = "github:numtide/devshell";
+    read5 = { url = "github:rnajena/read5"; flake = false; };
   };
 
-  outputs = { self, nixpkgs, flake-utils, devshell }: let
+  outputs = outputs@{ self, nixpkgs, flake-utils, devshell, ... }: let
 
     # each system
     eachSystem = system: let
@@ -44,6 +45,7 @@
       # python310 = prev.python310.override { packageOverrides = final.pythonOverlay; };
 
       # Overlay for python packages.
+      # TODO This should be specialized to different python versions where necessary / possible.
       pythonOverlay = self: super: {
 
         lib-pod5 = super.buildPythonPackage rec {
@@ -99,12 +101,13 @@
         read5 = self.buildPythonPackage rec {
           pname = "read5";
           version = "main";
-          src = final.fetchFromGitHub {
-            owner = "JannesSP";
-            repo = pname;
-            rev = "08a336080c52104f9fed2aa6affd83b70e7ed2f4";
-            hash = "sha256-kB81mXG0RJFOdP2aQP9dWCFPx7ospoSH42aoLRLhtUU=";
-          };
+          src = outputs.read5;
+          #src = final.fetchFromGitHub {
+          #  owner = "JannesSP";
+          #  repo = pname;
+          #  rev = "08a336080c52104f9fed2aa6affd83b70e7ed2f4";
+          #  hash = "sha256-kB81mXG0RJFOdP2aQP9dWCFPx7ospoSH42aoLRLhtUU=";
+          #};
           propagatedBuildInputs = with self; [ h5py pod5 pyslow5 vbz-h5py-plugin ];
           doCheck = true;
           checkPhase = ''

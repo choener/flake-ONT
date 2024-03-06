@@ -81,11 +81,28 @@
         "type": "github"
       }
     },
+    "read5": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1709719756,
+        "narHash": "sha256-8ioEgkrzr3TMf3+BsOAh6R+AjsgD2FLX9EpJzBHFTVs=",
+        "owner": "rnajena",
+        "repo": "read5",
+        "rev": "314b1323a8da6f4206ca37b0524d372172f8a869",
+        "type": "github"
+      },
+      "original": {
+        "owner": "rnajena",
+        "repo": "read5",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "devshell": "devshell",
         "flake-utils": "flake-utils_2",
-        "nixpkgs": "nixpkgs_2"
+        "nixpkgs": "nixpkgs_2",
+        "read5": "read5"
       }
     }
   },
